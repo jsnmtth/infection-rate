@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html>
+<!--
+This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation; either version 2 of the License, or (at your option) any later version.
+
+This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License along with this program. If not, see https://www.gnu.org/licenses/.
+-->
+  <head>
+	<title>Infection Calculator</title>
+	<script type="text/javascript">
+	 function doit() {
+	 var spread_days=document.getElementById('spread_days').value;
+	 var spread_rate=document.getElementById('spread_rate').value;
+	 var death_rate=document.getElementById('death_rate').value;
+	 var hosp_rate=document.getElementById('hosp_rate').value;
+	 var asym_rate=document.getElementById('asym_rate').value;
+	 var population=document.getElementById('population').value;
+	 var days_infected=document.getElementById('days_infected').value;
+	 var exposure_percentage=document.getElementById('exposure_percent').value;
+	 var infected_population=.5;
+	 var exposed_population=0;
+	 var by_day={};
+	 var recovered_population=0;
+	 var day=0;
+	 var previous_infections=0;
+	 var max_exposure=population*exposure_percentage;
+	 var max_exposed=false;
+
+	 while(infected_population>0) {
+		 var new_infections=0;
+		 if(!max_exposed) {
+			 if(infected_population>=1) {
+				 previous_infections=infected_population;
+			 }
+			 infected_population=infected_population*spread_rate;
+			 new_infections=infected_population-previous_infections;
+		 }
+
+		 
+		 if(!max_exposed && exposed_population+new_infections>=max_exposure) {
+			 new_infections=max_exposure-exposed_population;
+			 infected_population=max_exposure-recovered_population;
+			 max_exposed=true;
+		 }
+
+		 day+=Number(spread_days);
+		 by_day[day]=new_infections;
+		 var recovered_today=0;
+		 exposed_population+=new_infections;
+		 if((day-days_infected)>0 && (day-days_infected) in by_day) {
+			 recovered_today=by_day[day-days_infected];
+			 if(recovered_today>=infected_population) {
+				 recovered_today=infected_population;
+			 }
+			 
+			 recovered_population+=recovered_today;
+			 infected_population-=recovered_today;
+
+		 }
+		 if(infected_population<0){
+			 recovered_population+=infected_population;
+			 infected_population=0;
+		 }
+		 
+		 output=
+			 "<span style='font-weight: bold;'>Day "+day+"</span><br/>\n"+
+			 "&nbsp;&nbsp;&nbsp;&nbsp;Total Exposed: "+Number(exposed_population).toLocaleString()+"<br/>\n"+
+			 "&nbsp;&nbsp;&nbsp;&nbsp;Current Infected: "+Number(infected_population).toLocaleString()+"<br/>\n"+
+			 "&nbsp;&nbsp;&nbsp;&nbsp;New Infections: "+Number((new_infections)).toLocaleString()+"<br/>\n"+
+			 "&nbsp;&nbsp;&nbsp;&nbsp;Current Asymptomatic: "+Number(((infected_population)*asym_rate)).toLocaleString()+"<br/>\n"+
+			 "&nbsp;&nbsp;&nbsp;&nbsp;Current Hospitalized: "+Number(((infected_population)*hosp_rate)).toLocaleString()+"<br/>\n"+
+			 "&nbsp;&nbsp;&nbsp;&nbsp;Total Dead: "+Number(((recovered_population*death_rate))).toLocaleString()+"<br/>\n"+
+			 "&nbsp;&nbsp;&nbsp;&nbsp;Total Recovered: "+Number((recovered_population)-(recovered_population*death_rate)).toLocaleString()+"<br/>\n"+
+			 "&nbsp;&nbsp;&nbsp;&nbsp;Recovered Today: "+Number((recovered_today)).toLocaleString()+"<br/>\n";
+		 /*"&nbsp;&nbsp;&nbsp;&nbsp;Recovery Day: "+Number((day-days_infected)).toLocaleString()+"<br/>\n";*/
+
+		 var elem=document.getElementById('results');
+		 if(elem) {
+			 elem.innerHTML=elem.innerHTML+output;
+		 }
+		 if(day>100){console.log('aborted on days');return;}
+	 }
+
+
+ };
+	</script>
+  </head>
+  <body>
+	<table>
+	  <tr>
+		<td><label>Total Population Exposure</label></td>
+		<td><input id="exposure_percent" type="text" value=".6"/></td>
+		<td>
+		  Decimal representing the percentage of the total population that will get exposed.
+		</td>
+	  </tr>
+	  <tr>
+		<td><label>Spread Days</label></td>
+		<td><input id="spread_days" type="text" value="2"/></td>
+		<td>
+		  The number of days it takes the virus to spread (infection cycle duration)
+		</td>
+	  </tr>
+	  <tr>
+		<td><label>Spread Rate</label></td>
+		<td><input id="spread_rate" type="text" value="2"/></td>
+		<td>
+		  The multiplication factor of how many people get infected in an infection cycle
+		</td>
+	  </tr>
+	  <tr>
+		<td><label>Death Rate</label></td>
+		<td><input id="death_rate" type="text" value=".01"/></td>
+		<td>
+		  Decimal representing the percentage of deaths per infection
+		</td>
+	  </tr>
+	  <tr>
+		<td><label>Hosp. Rate</label></td>
+		<td><input id="hosp_rate" type="text" value=".6"/></td>
+		<td>
+		  Decimal representing the percentage of cases per infection requireing hospitalization
+		</td>
+	  </tr>
+	  <tr>
+		<td><label>Asymptomatic Rate</label></td>
+		<td><input id="asym_rate" type="text" value=".3"/></td>
+		<td>
+		  Decimal representing the percentage of cases per infection that are contagious but without symptoms
+		</td>
+	  </tr>
+	  <tr>
+		<td><label>Total Population</label></td>
+		<td><input id="population" type="text" value="327200000"/></td>
+		<td>
+		  Total Sample Population
+		</td>
+	  </tr>
+	  <tr>
+		<td><label>Days Infected</label></td>
+		<td><input id="days_infected" type="text" value="22"/></td>
+		<td>
+	 Number of days you carry the virus until either death or recovery. (must be divisible by spread days)
+		</td>
+	  </tr>
+
+	</table>
+	<button onclick="doit();">Go</button>
+	<div id="results">
+	</div>
+  </body>
+</html>
